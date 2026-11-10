@@ -15,6 +15,8 @@ export async function POST(request: Request) {
     body: JSON.stringify({
       query: `${PLACES[kind]?.query || asked} in ${HOTEL_AREA}, California`,
       numResults: 8,
+      // Guides and listicles, so results are the venues' own pages.
+      excludeDomains: ["timeout.com", "yelp.com", "tripadvisor.com", "eater.com", "theinfatuation.com", "reddit.com", "bartender.com", "secretsanfrancisco.com", "theworlds50best.com", "opentable.com", "sfgate.com", "whodoyou.com", "roadtrippers.com", "thrillist.com", "foursquare.com", "wikipedia.org", "instagram.com", "facebook.com"],
       type: "fast",
       contents: {
         summary: {
