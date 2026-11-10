@@ -33,6 +33,14 @@ export function buildQuestions(): Record<string, Question> {
       q[`${item.id}.qty`] = { type: "choice", instructions: item.qty.ask, criteria };
     }
     for (const opt of item.options) {
+      q[`${item.id}.${opt.id}.said`] = {
+        type: "noul",
+        instructions: opt.said,
+        criteria: {
+          true: "The guest stated this detail out loud.",
+          false: "The guest has not mentioned this detail.",
+        },
+      };
       q[`${item.id}.${opt.id}`] = {
         type: "choice",
         instructions: opt.ask,
@@ -65,7 +73,9 @@ export function readAnswers(answers: Record<string, Answer>, ms: number): Unders
     const options: Record<string, string> = {};
     for (const opt of item.options) {
       const picked = answers[`${item.id}.${opt.id}`]?.choice;
-      options[opt.id] = picked && picked in opt.choices ? picked : Object.keys(opt.choices)[0];
+      const said = (answers[`${item.id}.${opt.id}.said`]?.noul ?? 0) >= YES;
+      // Empty means the guest has not specified it, so the screen shows nothing for it.
+      options[opt.id] = said && picked && picked in opt.choices ? picked : "";
     }
     const qty = item.qty ? wordCount(answers[`${item.id}.qty`]?.choice ?? "one") || 1 : 1;
     items.push({ id: item.id, qty, options });

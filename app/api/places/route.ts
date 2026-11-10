@@ -7,27 +7,49 @@ export async function POST(request: Request) {
   const key = process.env.EXA_API_KEY;
   if (!key) return Response.json({ error: "EXA_API_KEY is not set" }, { status: 500 });
 
-  const base = PLACES[kind]?.query || said.split(/\s+/).slice(-25).join(" ");
+  // Search on what the guest actually asked for, so "quiet" or "pizza" carry through.
+  const asked = said.split(/\s+/).slice(-20).join(" ");
   const res = await fetch("https://api.exa.ai/search", {
     method: "POST",
     headers: { "x-api-key": key, "Content-Type": "application/json" },
     body: JSON.stringify({
-      query: `${base} near ${HOTEL_AREA}, a specific venue's own page`,
-      numResults: 3,
+      query: `${PLACES[kind]?.query || asked} in ${HOTEL_AREA}, California`,
+      numResults: 8,
       type: "fast",
-      contents: { summary: { query: "One short sentence on what this place is known for." } },
+      contents: {
+        summary: {
+          query: "The venue's name and what it is known for.",
+          schema: {
+            type: "object",
+            properties: {
+              venue_name: { type: "string", description: "The name of the single venue this page belongs to. Empty if the page is a list or article." },
+              known_for: { type: "string", description: "At most twelve words on what the venue is known for." },
+            },
+            required: ["venue_name", "known_for"],
+          },
+        },
+      },
     }),
   });
   if (!res.ok) {
     return Response.json({ error: `Exa ${res.status}: ${await res.text()}` }, { status: 502 });
   }
   const data = await res.json();
-  const places: Place[] = (data.results ?? []).map((r: Record<string, string>) => ({
-    title: (r.title ?? r.url).split(/ [|\-–·] /)[0],
-    url: r.url,
-    host: new URL(r.url).hostname.replace(/^www\./, ""),
-    image: r.image ?? null,
-    blurb: r.summary ?? "",
-  }));
+  const places: Place[] = [];
+  for (const r of (data.results ?? []) as Record<string, string>[]) {
+    let info: { venue_name?: string; known_for?: string } = {};
+    try {
+      info = JSON.parse(r.summary);
+    } catch {}
+    if (!info.venue_name || places.some((p) => p.title.toLowerCase() === info.venue_name!.toLowerCase())) continue;
+    places.push({
+      title: info.venue_name,
+      url: r.url,
+      host: new URL(r.url).hostname.replace(/^www\./, ""),
+      image: r.image ?? null,
+      blurb: info.known_for ?? "",
+    });
+    if (places.length === 3) break;
+  }
   return Response.json({ places });
 }
