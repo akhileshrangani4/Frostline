@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     headers: { "x-api-key": key, "Content-Type": "application/json" },
     body: JSON.stringify({
       query: `${PLACES[kind]?.query || asked} in ${HOTEL_AREA}, California`,
-      numResults: 8,
+      numResults: 10,
       // Guides and listicles, so results are the venues' own pages.
       excludeDomains: ["timeout.com", "yelp.com", "tripadvisor.com", "eater.com", "theinfatuation.com", "reddit.com", "bartender.com", "secretsanfrancisco.com", "theworlds50best.com", "opentable.com", "sfgate.com", "whodoyou.com", "roadtrippers.com", "thrillist.com", "foursquare.com", "wikipedia.org", "instagram.com", "facebook.com"],
       type: "fast",
@@ -26,8 +26,9 @@ export async function POST(request: Request) {
             properties: {
               venue_name: { type: "string", description: "The name of the single venue this page belongs to. Empty if the page is a list or article." },
               known_for: { type: "string", description: "At most twelve words on what the venue is known for." },
+              one_venue: { type: "boolean", description: "True only if the whole page is about one restaurant, bar or shop. False for lists, guides, rankings and articles covering several places." },
             },
-            required: ["venue_name", "known_for"],
+            required: ["venue_name", "known_for", "one_venue"],
           },
         },
       },
@@ -39,11 +40,11 @@ export async function POST(request: Request) {
   const data = await res.json();
   const places: Place[] = [];
   for (const r of (data.results ?? []) as Record<string, string>[]) {
-    let info: { venue_name?: string; known_for?: string } = {};
+    let info: { venue_name?: string; known_for?: string; one_venue?: boolean } = {};
     try {
       info = JSON.parse(r.summary);
     } catch {}
-    if (!info.venue_name || places.some((p) => p.title.toLowerCase() === info.venue_name!.toLowerCase())) continue;
+    if (!info.venue_name || !info.one_venue || info.venue_name.length > 40 || places.some((p) => p.title.toLowerCase() === info.venue_name!.toLowerCase())) continue;
     places.push({
       title: info.venue_name,
       url: r.url,
