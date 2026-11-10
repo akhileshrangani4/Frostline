@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Vapi from "@vapi-ai/web";
-import { ITEMS, PLACES, type Item, type OrderItem, type Understanding } from "@/lib/catalog";
+import { ITEMS, PLACES, type Item, type OrderItem, type RouteAsk, type Understanding } from "@/lib/catalog";
 import { ASSISTANT, type Block, type Card } from "@/lib/assistant";
 import type { Place } from "./api/places/route";
 import type { RouteResult } from "./api/route/route";
@@ -29,6 +29,7 @@ export default function Room() {
   const [jarvis, setJarvis] = useState("");
   const [order, setOrder] = useState<OrderItem[]>([]);
   const [placeKind, setPlaceKind] = useState<string | null>(null);
+  const [routeAsk, setRouteAsk] = useState<RouteAsk | null>(null);
   const [places, setPlaces] = useState<Place[] | null>(null);
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [cards, setCards] = useState<Card[]>([]);
@@ -76,6 +77,7 @@ export default function Room() {
       orderRef.current = u.items;
       setOrder(u.items);
       setPlaceKind(u.place);
+      setRouteAsk(u.route);
       setMs(u.ms);
       setError(null);
     } catch (e) {
@@ -98,7 +100,7 @@ export default function Room() {
       .catch(() => {});
   }, []);
 
-  // Exa: search once each time the kind of place changes, then draw the way to the first result.
+  // Exa: search once each time the kind of place changes.
   useEffect(() => {
     if (!placeKind) {
       setPlaces(null);
@@ -110,13 +112,19 @@ export default function Room() {
       .then((data) => {
         if (stale) return;
         setPlaces(data.places);
-        if (data.places[0]) drawRoute({ from: "hotel", to: data.places[0].title, mode: "walk" });
       })
       .catch((e) => !stale && setError(String(e.message ?? e)));
     return () => {
       stale = true;
     };
   }, [placeKind, drawRoute]);
+
+  // Draw a route only once the guest asks for directions.
+  const firstPlace = places?.[0]?.title;
+  useEffect(() => {
+    if (routeAsk === "to_hotel") drawRoute({ from: "San Francisco International Airport", to: "hotel", mode: "drive" });
+    if (routeAsk === "to_nearby_place" && firstPlace) drawRoute({ from: "hotel", to: firstPlace, mode: "walk" });
+  }, [routeAsk, firstPlace, drawRoute]);
 
   // Jarvis draws on the screen through tool calls.
   const runTool = useCallback(
@@ -242,6 +250,7 @@ export default function Room() {
     setOrder([]);
     orderRef.current = [];
     setPlaceKind(null);
+    setRouteAsk(null);
     setRoute(null);
     setCards([]);
     setBooked({});

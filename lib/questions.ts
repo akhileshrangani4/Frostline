@@ -63,6 +63,23 @@ export function buildQuestions(): Record<string, Question> {
     criteria: Object.fromEntries(Object.entries(PLACES).map(([k, p]) => [k, p.when])),
   };
 
+  q["route.want"] = {
+    type: "noul",
+    instructions: "Is the guest asking for directions or how to get to a place?",
+    criteria: {
+      true: "The guest asked for directions, the way, how far it is, or how to get to a place.",
+      false: "The guest has not asked how to get anywhere.",
+    },
+  };
+  q["route.to"] = {
+    type: "choice",
+    instructions: "Where does the guest want directions to?",
+    criteria: {
+      to_hotel: "The guest wants the way to the hotel itself, for example from the airport.",
+      to_nearby_place: "The guest wants the way from the hotel to a restaurant, bar or other place nearby.",
+    },
+  };
+
   return q;
 }
 
@@ -82,5 +99,7 @@ export function readAnswers(answers: Record<string, Answer>, ms: number): Unders
   }
   const kind = answers["place.kind"]?.choice;
   const place = (answers["place.want"]?.noul ?? 0) >= YES && kind && kind in PLACES ? kind : null;
-  return { items, place, ms };
+  const to = answers["route.to"]?.choice;
+  const route = (answers["route.want"]?.noul ?? 0) >= YES && (to === "to_hotel" || to === "to_nearby_place") ? to : null;
+  return { items, place, route, ms };
 }

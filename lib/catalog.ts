@@ -50,16 +50,16 @@ export const ITEMS: Item[] = [
   },
   {
     id: "sandwich",
-    name: "Club sandwich",
-    noun: "a club sandwich",
+    name: "Sandwich",
+    noun: "a sandwich of any kind",
     image: "/items/sandwich.png",
     emoji: "🥪",
     dept: "Kitchen",
-    qty: { max: 3, ask: "How many club sandwiches does the guest want in total?" },
+    qty: { max: 3, ask: "How many sandwiches does the guest want in total?" },
     options: [
       {
         id: "mayo",
-        ask: "Does the guest want mayonnaise on the club sandwich?",
+        ask: "Does the guest want mayonnaise on the sandwich?",
         said: "Did the guest say anything about mayonnaise?",
         choices: {
           with_mayo: { label: "Mayo", when: "The guest said nothing about mayonnaise, or asked for it." },
@@ -68,7 +68,7 @@ export const ITEMS: Item[] = [
       },
       {
         id: "side",
-        ask: "Which side does the guest want with the club sandwich?",
+        ask: "Which side does the guest want with the sandwich?",
         said: "Did the guest say which side they want with the sandwich, such as fries or salad?",
         choices: {
           fries: { label: "Fries", when: "The guest said nothing about a side, or asked for fries." },
@@ -229,4 +229,5 @@ export const PLACES: Record<string, PlaceKind> = {
 };
 
 export type OrderItem = { id: string; qty: number; options: Record<string, string> };
-export type Understanding = { items: OrderItem[]; place: string | null; ms: number };
+export type RouteAsk = "to_hotel" | "to_nearby_place";
+export type Understanding = { items: OrderItem[]; place: string | null; route: RouteAsk | null; ms: number };
