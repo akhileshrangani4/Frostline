@@ -2,8 +2,6 @@
 
 A voice concierge for the hotel room. Ask Jarvis for towels, a sandwich or a late checkout and each request appears on screen while you are still mid-sentence. Corrections and removals update live, nearby places come from a real search, and directions are drawn as a route.
 
-Live: https://vapihack.vercel.app
-
 ## How it works
 
 - **Vapi** runs the voice call and streams partial transcripts to the page.
