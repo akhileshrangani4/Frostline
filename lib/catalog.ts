@@ -5,6 +5,8 @@ export type Choice = { label: string; when: string };
 export type Option = {
   id: string;
   ask: string;
+  /** Companion yes/no: did the guest specify this at all? */
+  said: string;
   choices: Record<string, Choice>;
 };
 
@@ -58,6 +60,7 @@ export const ITEMS: Item[] = [
       {
         id: "mayo",
         ask: "Does the guest want mayonnaise on the club sandwich?",
+        said: "Did the guest say anything about mayonnaise?",
         choices: {
           with_mayo: { label: "Mayo", when: "The guest said nothing about mayonnaise, or asked for it." },
           no_mayo: { label: "No mayo", when: "The guest asked for the sandwich without mayonnaise." },
@@ -66,6 +69,7 @@ export const ITEMS: Item[] = [
       {
         id: "side",
         ask: "Which side does the guest want with the club sandwich?",
+        said: "Did the guest say which side they want with the sandwich, such as fries or salad?",
         choices: {
           fries: { label: "Fries", when: "The guest said nothing about a side, or asked for fries." },
           salad: { label: "Salad", when: "The guest asked for a salad on the side." },
@@ -85,6 +89,7 @@ export const ITEMS: Item[] = [
       {
         id: "milk",
         ask: "Which milk does the guest want in the coffee?",
+        said: "Did the guest say how they take their coffee, such as with a kind of milk or black?",
         choices: {
           whole_milk: { label: "Whole milk", when: "The guest said nothing about milk, or asked for regular milk." },
           oat_milk: { label: "Oat milk", when: "The guest asked for oat milk." },
@@ -104,6 +109,7 @@ export const ITEMS: Item[] = [
       {
         id: "colour",
         ask: "Which wine does the guest want?",
+        said: "Did the guest say whether they want red or white wine?",
         choices: {
           red: { label: "Red", when: "The guest said nothing about the kind of wine, or asked for red." },
           white: { label: "White", when: "The guest asked for white wine." },
@@ -123,6 +129,7 @@ export const ITEMS: Item[] = [
       {
         id: "kind",
         ask: "Which water does the guest want?",
+        said: "Did the guest say whether they want sparkling or still water?",
         choices: {
           sparkling: { label: "Sparkling", when: "The guest said nothing about the kind of water, or asked for sparkling." },
           still: { label: "Still", when: "The guest asked for still or flat water." },
@@ -141,6 +148,7 @@ export const ITEMS: Item[] = [
       {
         id: "time",
         ask: "What time does the guest want to check out?",
+        said: "Did the guest give a time for checking out?",
         choices: {
           noon: { label: "12 PM", when: "The guest gave no time, or asked for noon." },
           one_pm: { label: "1 PM", when: "The guest asked to check out around one o'clock." },
@@ -161,6 +169,7 @@ export const ITEMS: Item[] = [
       {
         id: "time",
         ask: "What time does the guest want the wake-up call?",
+        said: "Did the guest give a time for the wake-up call?",
         choices: {
           six_am: { label: "6 AM", when: "The guest asked to be woken around six in the morning." },
           seven_am: { label: "7 AM", when: "The guest gave no time, or asked for seven in the morning." },

@@ -26,5 +26,15 @@ export async function POST(request: Request) {
     return Response.json({ error: `Jev ${res.status}: ${await res.text()}` }, { status: 502 });
   }
   const data = await res.json();
-  return Response.json(readAnswers(data.answers, ms));
+  const understood = readAnswers(data.answers, ms);
+  console.log(`[jev ${ms}ms] "${said}" -> ${JSON.stringify(understood.items)} place=${understood.place}`);
+  if (new URL(request.url).searchParams.has("raw")) {
+    const nouls = Object.fromEntries(
+      Object.entries(data.answers as Record<string, { noul?: number }>)
+        .filter(([, a]) => a.noul !== undefined)
+        .map(([k, a]) => [k, Math.round(a.noul! * 100) / 100]),
+    );
+    return Response.json({ ...understood, nouls });
+  }
+  return Response.json(understood);
 }

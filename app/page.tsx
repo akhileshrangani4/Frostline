@@ -48,6 +48,25 @@ export default function Room() {
   const [error, setError] = useState<string | null>(null);
   const [debug, setDebug] = useState(false);
 
+  // Variant pictures that exist on disk, e.g. /items/wine-white.png. Also warms the image cache.
+  const [variants, setVariants] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const load = (src: string, onOk?: () => void) => {
+      const img = new Image();
+      if (onOk) img.onload = onOk;
+      img.src = src;
+    };
+    Object.values(PLACES).forEach((p) => load(p.image));
+    for (const item of ITEMS) {
+      load(item.image);
+      for (const opt of item.options)
+        for (const choice of Object.keys(opt.choices)) {
+          const src = variantSrc(item, choice);
+          load(src, () => setVariants((v) => new Set(v).add(src)));
+        }
+    }
+  }, []);
+
   const vapi = useRef<Vapi | null>(null);
   const orderRef = useRef<OrderItem[]>([]);
   const said = [...finals, partial].join(" ").trim();
@@ -196,7 +215,8 @@ export default function Room() {
           <div className="tray">
             {order.map((o) => {
               const item = ITEMS.find((i) => i.id === o.id)!;
-              return <Thing key={o.id} item={item} order={o} booked={booked[o.id] === JSON.stringify(o)} />;
+              const src = Object.values(o.options).map((c) => c && variantSrc(item, c)).find((v) => v && variants.has(v));
+              return <Thing key={o.id} item={item} order={o} src={src || item.image} booked={booked[o.id] === JSON.stringify(o)} />;
             })}
             {placeKind && <Nearby kind={placeKind} places={places} />}
           </div>
@@ -236,16 +256,29 @@ export default function Room() {
   );
 }
 
-function Picture({ src, emoji }: { src: string; emoji: string }) {
+/** wine + white -> /items/wine-white.png */
+const variantSrc = (item: Item, choice: string) => item.image.replace(".png", `-${choice.replace(/_(milk|pm|am|mayo)$|^with_/g, "")}.png`);
+
+function Picture({ src, emoji, count = 1 }: { src: string; emoji: string; count?: number }) {
   const [missing, setMissing] = useState(false);
   useEffect(() => setMissing(false), [src]);
+  const step = count > 1 ? 30 : 0;
+  const size = 200 - (count - 1) * step;
   return (
     <div className="pic">
       {missing ? (
         <span className="stand-in">{emoji}</span>
       ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt="" onError={() => setMissing(true)} />
+        Array.from({ length: count }, (_, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={i}
+            src={src}
+            alt=""
+            onError={() => setMissing(true)}
+            style={{ width: size, height: size, left: i * step, top: (count - 1 - i) * step }}
+          />
+        ))
       )}
     </div>
   );
@@ -264,10 +297,10 @@ function Row({ lit, total, label }: { lit: number[]; total: number; label: strin
   );
 }
 
-function Thing({ item, order, booked }: { item: Item; order: OrderItem; booked: boolean }) {
+function Thing({ item, order, src, booked }: { item: Item; order: OrderItem; src: string; booked: boolean }) {
   return (
     <article className="thing">
-      <Picture src={item.image} emoji={item.emoji} />
+      <Picture src={src} emoji={item.emoji} count={order.qty} />
       <h2>{item.name}</h2>
       <div className="rows">
         {item.qty && (
@@ -281,6 +314,7 @@ function Thing({ item, order, booked }: { item: Item; order: OrderItem; booked: 
         {item.options.map((opt) => {
           const keys = Object.keys(opt.choices);
           const picked = order.options[opt.id];
+          if (!picked) return null;
           return <Row key={`${opt.id}-${picked}`} lit={[keys.indexOf(picked)]} total={keys.length} label={opt.choices[picked].label} />;
         })}
       </div>
@@ -300,9 +334,13 @@ function Nearby({ kind, places }: { kind: string; places: Place[] | null }) {
         {places?.map((pl) => (
           <li key={pl.url}>
             <a href={pl.url} target="_blank" rel="noreferrer">
-              <strong>{pl.title}</strong>
-              {pl.blurb && <span>{pl.blurb}</span>}
-              <em>{pl.host}</em>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {pl.image && <img src={pl.image} alt="" onError={(e) => (e.currentTarget.style.display = "none")} />}
+              <div>
+                <strong>{pl.title}</strong>
+                {pl.blurb && <span>{pl.blurb}</span>}
+                <em>{pl.host}</em>
+              </div>
             </a>
           </li>
         ))}
