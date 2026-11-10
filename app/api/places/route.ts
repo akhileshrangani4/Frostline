@@ -44,7 +44,9 @@ export async function POST(request: Request) {
     try {
       info = JSON.parse(r.summary);
     } catch {}
-    if (!info.venue_name || !info.one_venue || info.venue_name.length > 40 || places.some((p) => p.title.toLowerCase() === info.venue_name!.toLowerCase())) continue;
+    const first = (n: string) => n.toLowerCase().split(/[\s,]+/)[0];
+    if (!info.venue_name || !info.one_venue || info.venue_name.length > 40) continue;
+    if (places.some((p) => first(p.title) === first(info.venue_name!))) continue;
     places.push({
       title: info.venue_name,
       url: r.url,
