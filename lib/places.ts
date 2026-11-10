@@ -47,12 +47,13 @@ export async function findPlaces(
   }
   const data = await res.json();
   const places: Place[] = [];
+  const firstWord = (name: string) => name.toLowerCase().split(/[\s,]+/)[0];
   for (const r of (data.results ?? []) as Record<string, string>[]) {
     let info: { venue_name?: string; known_for?: string; one_venue?: boolean } = {};
     try {
       info = JSON.parse(r.summary);
     } catch {}
-    if (!info.venue_name || !info.one_venue || info.venue_name.length > 40 || places.some((p) => p.title.toLowerCase() === info.venue_name!.toLowerCase())) continue;
+    if (!info.venue_name || !info.one_venue || info.venue_name.length > 40 || places.some((p) => firstWord(p.title) === firstWord(info.venue_name!))) continue;
     const url = URL.canParse(r.url) ? new URL(r.url) : null;
     if (!url || !["http:", "https:"].includes(url.protocol)) continue;
     const host = url.hostname.replace(/^www\./, "");
