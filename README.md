@@ -34,3 +34,17 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Muse concierge demo
+
+Set `TYPESAFE_API_KEY` and `EXA_API_KEY` in `.env.local`. Set
+`NEXT_PUBLIC_VAPI_PUBLIC_KEY` if you also want to place browser voice calls.
+Run `pnpm dev`, open the room page, and expose the app through an HTTPS
+tunnel. Add the tunnel's `/api/mcp/mcp` URL as a Streamable HTTP connector
+in Muse. Try asking it to find a restaurant near the Palace Hotel.
+
+`ask_concierge` sends the request to Jev and searches Exa when it detects a
+nearby-place request. The room page receives the same results on `/api/live`.
+For a tunneled demo, expose only the MCP path and keep the room display local.
+The live feed uses memory in a single Next.js process. A multi-instance
+deployment needs a shared store and a way to deliver updates across instances.

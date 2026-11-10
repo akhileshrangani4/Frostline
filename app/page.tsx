@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Vapi from "@vapi-ai/web";
 import { ITEMS, PLACES, type Item, type OrderItem, type Understanding } from "@/lib/catalog";
-import type { Place } from "./api/places/route";
+import type { ConciergeUpdate } from "@/lib/live";
+import type { Place } from "@/lib/places";
 
 /** How Jarvis addresses the guest. */
 const HONORIFIC = "sir";
@@ -43,6 +44,7 @@ export default function Room() {
   const [order, setOrder] = useState<OrderItem[]>([]);
   const [placeKind, setPlaceKind] = useState<string | null>(null);
   const [places, setPlaces] = useState<Place[] | null>(null);
+  const [museUpdate, setMuseUpdate] = useState<ConciergeUpdate | null>(null);
   const [booked, setBooked] = useState<Record<string, string>>({});
   const [ms, setMs] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +107,10 @@ export default function Room() {
   }, []);
 
   useEffect(() => {
-    if (said) understand(said);
+    if (said) {
+      setMuseUpdate(null);
+      understand(said);
+    }
   }, [said, understand]);
 
   // Exa: search once each time the kind of place changes.
@@ -135,12 +140,15 @@ export default function Room() {
   }, [placeKind]);
 
   useEffect(() => {
+    const feed = new EventSource("/api/live");
+    feed.onmessage = (event) => setMuseUpdate(JSON.parse(event.data) as ConciergeUpdate);
+    return () => feed.close();
+  }, []);
+
+  useEffect(() => {
     setDebug(new URLSearchParams(window.location.search).has("debug"));
     const key = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
-    if (!key) {
-      setError("NEXT_PUBLIC_VAPI_PUBLIC_KEY is not set");
-      return;
-    }
+    if (!key) return;
     const v = new Vapi(key);
     vapi.current = v;
     v.on("call-start", () => {
@@ -174,7 +182,10 @@ export default function Room() {
   }, []);
 
   const toggle = () => {
-    if (!vapi.current) return;
+    if (!vapi.current) {
+      setError("NEXT_PUBLIC_VAPI_PUBLIC_KEY is not set");
+      return;
+    }
     if (live || connecting) {
       vapi.current.stop();
       return;
@@ -191,12 +202,16 @@ export default function Room() {
     setOrder([]);
     orderRef.current = [];
     setPlaceKind(null);
+    setMuseUpdate(null);
     setBooked({});
     setMs(null);
   };
 
-  const empty = order.length === 0 && !placeKind;
-  const words = said.split(/\s+/).filter(Boolean);
+  const visibleKind = museUpdate?.kind ?? placeKind;
+  const visiblePlaces = museUpdate ? museUpdate.places : places;
+  const visibleMs = museUpdate?.ms ?? ms;
+  const empty = order.length === 0 && !visibleKind;
+  const words = museUpdate ? [] : said.split(/\s+/).filter(Boolean);
   const freshFrom = finals.join(" ").split(/\s+/).filter(Boolean).length;
 
   return (
@@ -218,7 +233,7 @@ export default function Room() {
               const src = Object.values(o.options).map((c) => c && variantSrc(item, c)).find((v) => v && variants.has(v));
               return <Thing key={o.id} item={item} order={o} src={src || item.image} booked={booked[o.id] === JSON.stringify(o)} />;
             })}
-            {placeKind && <Nearby kind={placeKind} places={places} />}
+            {visibleKind && <Nearby kind={visibleKind} places={visiblePlaces} />}
           </div>
         )}
       </section>
@@ -228,14 +243,14 @@ export default function Room() {
         <div className="dock">
           <div className="bar">
             <div className="said">
-              {words.length === 0 && <span className="hint">{live ? "Listening…" : "Tap the button and start talking"}</span>}
+              {words.length === 0 && <span className="hint">{museUpdate ? "Muse concierge request" : live ? "Listening…" : "Tap the button and start talking"}</span>}
               {words.map((w, i) => (
                 <span key={i} className={i >= freshFrom ? "fresh" : ""}>
                   {w}{" "}
                 </span>
               ))}
             </div>
-            {ms !== null && <span className="ms">{ms} ms</span>}
+            {visibleMs !== null && <span className="ms">{visibleMs} ms</span>}
           </div>
           <button className={`orb ${live ? "live" : ""} ${connecting ? "wait" : ""}`} onClick={toggle} aria-label={live ? "End call" : "Start call"}>
             <i />
@@ -331,6 +346,7 @@ function Nearby({ kind, places }: { kind: string; places: Place[] | null }) {
       <h2>{p.name}</h2>
       <ul className="places">
         {places === null && <li className="searching">Searching the neighbourhood…</li>}
+        {places?.length === 0 && <li className="searching">No matching places found.</li>}
         {places?.map((pl) => (
           <li key={pl.url}>
             <a href={pl.url} target="_blank" rel="noreferrer">
