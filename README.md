@@ -1,36 +1,33 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Frostline
 
-## Getting Started
+A voice concierge for the hotel room. Ask Jarvis for towels, a sandwich or a late checkout and each request appears on screen while you are still mid-sentence. Corrections and removals update live, nearby places come from a real search, and directions are drawn as a route.
 
-First, run the development server:
+Live: https://vapihack.vercel.app
+
+## How it works
+
+- **Vapi** runs the voice call and streams partial transcripts to the page.
+- **TypeSafe Jev** reads everything said so far on every partial and answers typed questions (what is wanted, how many, which options) in about 100 to 200 ms. The screen is recomputed from those answers, so "make it three" and "get rid of the coffee" just work.
+- **Exa** finds real places near the hotel when the guest asks for somewhere to go.
+- Routes use OpenStreetMap (Nominatim and OSRM). Jarvis can also draw info cards and routes through tool calls.
+
+Nothing is really booked. It is a demo.
+
+## Layout
+
+- `lib/catalog.ts`: everything the room can show
+- `lib/questions.ts`: Jev question wording and thresholds
+- `lib/assistant.ts`: the Vapi assistant, its prompt and tools
+- `app/api/understand`, `app/api/places`, `app/api/route`: Jev, Exa and routing
+- `app/page.tsx`: the screen
+
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.env.local` needs `TYPESAFE_API_KEY`, `NEXT_PUBLIC_VAPI_PUBLIC_KEY` and `EXA_API_KEY`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Add `?debug` to type instead of talking, or `?demo` for a filled screen.

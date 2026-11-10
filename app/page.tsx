@@ -130,7 +130,7 @@ export default function Room() {
     return () => {
       stale = true;
     };
-  }, [placeKind, drawRoute]);
+  }, [placeKind]);
 
   // Draw a route only once the guest asks for directions.
   const firstPlace = places?.[0]?.title;
