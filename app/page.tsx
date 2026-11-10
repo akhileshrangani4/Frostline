@@ -13,6 +13,18 @@ const BOOKED = /\b(booked|arranged|on (its|their) way|taken care|sent (up|that))
 const variantSrc = (item: Item, choice: string) =>
   item.image.replace(".png", `-${choice.replace(/_(milk|pm|am|mayo)$|^with_/g, "")}.png`);
 
+/** The walkthrough shown to visitors: what to say, and how the screen proves it landed. */
+type Seen = { has: (id: string) => OrderItem | undefined; place: boolean; route: boolean; card: boolean; done: Set<number> };
+const SCRIPT: { say: string; landed: (s: Seen) => boolean }[] = [
+  { say: "send up two towels and a club sandwich, no mayo", landed: (s) => !!s.has("towels") && !!s.has("sandwich") },
+  { say: "actually, make it three towels", landed: (s) => (s.has("towels")?.qty ?? 0) >= 3 },
+  { say: "and a black coffee, and a late checkout around one", landed: (s) => !!s.has("coffee") && !!s.has("checkout") },
+  { say: "actually, get rid of the coffee", landed: (s) => s.done.has(2) && !s.has("coffee") },
+  { say: "where's a good sushi restaurant nearby?", landed: (s) => s.place },
+  { say: "how do i get there?", landed: (s) => s.route },
+  { say: "what time does the pool open?", landed: (s) => s.card },
+];
+
 const post = async (url: string, body: unknown) => {
   const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const data = await res.json();
@@ -38,6 +50,7 @@ export default function Room() {
   const [error, setError] = useState<string | null>(null);
   const [debug, setDebug] = useState(false);
   const [variants, setVariants] = useState<Set<string>>(new Set());
+  const [done, setDone] = useState<Set<number>>(new Set());
 
   const vapi = useRef<Vapi | null>(null);
   const orderRef = useRef<OrderItem[]>([]);
@@ -231,6 +244,17 @@ export default function Room() {
     return () => clearTimeout(t);
   }, [live, order, places, route, cards, booked]);
 
+  // Tick off each line of the walkthrough once the screen shows it.
+  useEffect(() => {
+    setDone((prev) => {
+      const seen: Seen = { has: (id) => order.find((o) => o.id === id), place: !!placeKind, route: !!route, card: cards.length > 0, done: prev };
+      const next = new Set(prev);
+      SCRIPT.forEach((step, i) => step.landed(seen) && next.add(i));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [order, placeKind, route, cards]);
+  const upNext = SCRIPT.findIndex((_, i) => !done.has(i));
+
   const toggle = () => {
     if (!vapi.current) return;
     if (live || connecting) {
@@ -254,6 +278,7 @@ export default function Room() {
     setRoute(null);
     setCards([]);
     setBooked({});
+    setDone(new Set());
     setMs(null);
   };
 
@@ -303,6 +328,25 @@ export default function Room() {
             ))}
           </div>
         )}
+        <aside className="script">
+          <div className="frame">
+            <div className="titlebar">
+              <i />
+              <i />
+              <i />
+              <span>try saying</span>
+            </div>
+            <ol>
+              {SCRIPT.map((step, i) => (
+                <li key={i} className={done.has(i) ? "done" : i === upNext ? "next" : ""}>
+                  <b>{done.has(i) ? "✓" : i + 1}</b>
+                  <span>&ldquo;{step.say}&rdquo;</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+          <p>{live ? "say them one at a time" : "tap talk to jarvis, then say these one at a time"}</p>
+        </aside>
       </section>
 
       <footer>

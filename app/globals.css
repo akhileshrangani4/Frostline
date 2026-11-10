@@ -619,3 +619,77 @@ footer {
     scale: 1.5;
   }
 }
+
+/* The walkthrough, pinned to the top right. */
+.script {
+  flex: none;
+  align-self: flex-start;
+  width: 250px;
+  margin-left: 20px;
+  position: sticky;
+  top: 0;
+}
+.script ol {
+  background: #fff;
+  padding: 6px 0;
+}
+.script li {
+  display: flex;
+  gap: 9px;
+  padding: 6px 12px;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--ink-2);
+  transition: all 0.25s;
+}
+.script li b {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: var(--ink-2);
+  border: 1px solid #c4c4c4;
+}
+.script li.next {
+  color: var(--ink);
+  background: #eaf3ff;
+}
+.script li.next b {
+  color: #fff;
+  background: var(--blue);
+  border-color: var(--blue);
+}
+.script li.done {
+  color: var(--ink-3);
+}
+.script li.done span {
+  text-decoration: line-through;
+}
+.script li.done b {
+  color: #fff;
+  background: var(--green);
+  border-color: var(--green);
+}
+.script > p {
+  margin-top: 7px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+@media (max-width: 860px) {
+  .stage {
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .script {
+    position: static;
+    margin: 0;
+    align-self: center;
+    width: min(360px, 100%);
+    order: 2;
+  }
+}
