@@ -17,7 +17,7 @@ const handler = createMcpHandler(
       "ask_concierge",
       {
         title: "Ask the hotel concierge",
-        description: "Find restaurants, bars, cafés, shops or sights near the Palace Hotel in San Francisco and show them on the concierge screen.",
+        description: "Find restaurants, bars, cafés, shops or sights near the Palace Hotel in San Francisco and return a shareable visual results link.",
         inputSchema: { text: z.string().trim().min(1).max(500).describe("The guest’s request") },
       },
       async ({ text }) => {
@@ -27,11 +27,15 @@ const handler = createMcpHandler(
           if (!kind) return textResult("I can help find a restaurant, bar, café, shop, or sight near the hotel.");
 
           const places = await findPlaces(kind, text, LOCATION, HOTEL_DOMAINS);
-          publishConciergeUpdate({ kind, places, ms: understood.ms });
+          const update = publishConciergeUpdate({ kind, places, ms: understood.ms });
+          const base = process.env.CONCIERGE_PUBLIC_URL;
+          const path = `/share/${update.id}`;
+          const share = base && URL.canParse(path, base) ? new URL(path, base) : null;
+          const visual = share?.protocol === "https:" ? `Open the visual results: ${share.href}` : null;
 
           if (places.length === 0) return textResult("I couldn’t find a matching place near the hotel.");
           return textResult(
-            ["Here are a few options near the Palace Hotel:", ...places.map((place, index) =>
+            [...(visual ? [visual, ""] : []), "Here are a few options near the Palace Hotel:", ...places.map((place, index) =>
               `${index + 1}. ${place.title}${place.blurb ? ` — ${place.blurb}` : ""}\n${place.url}`,
             )].join("\n"),
           );

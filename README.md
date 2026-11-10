@@ -45,6 +45,11 @@ in Muse. Try asking it to find a restaurant near the Palace Hotel.
 
 `ask_concierge` sends the request to Jev and searches Exa when it detects a
 nearby-place request. The room page receives the same results on `/api/live`.
-For a tunneled demo, expose only the MCP path and keep the room display local.
+Keep the live room display and its event stream local.
 The live feed uses memory in a single Next.js process. A multi-instance
 deployment needs a shared store and a way to deliver updates across instances.
+
+Set `CONCIERGE_PUBLIC_URL` to the public HTTPS origin to include a visual
+results link in the MCP answer. Forward `/share/<id>` and `/_next/static/*`
+through the tunnel alongside the MCP path. Each link shows just that request's
+results for up to one hour while the demo process is running.

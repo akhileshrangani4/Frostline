@@ -7,6 +7,7 @@ import { ASSISTANT, type Block, type Card } from "@/lib/assistant";
 import type { ConciergeUpdate } from "@/lib/live";
 import type { Place } from "@/lib/places";
 import type { RouteResult } from "./api/route/route";
+import { Nearby, Win } from "./concierge-cards";
 
 const BOOKED = /\b(booked|arranged|on (its|their) way|taken care|sent (up|that))\b/i;
 
@@ -387,24 +388,6 @@ function Clock() {
   return <span>{now}</span>;
 }
 
-/** A little desktop window with a file name under it. */
-function Win({ title, file, wide, children }: { title: string; file: string; wide?: boolean; children: React.ReactNode }) {
-  return (
-    <figure className={`win ${wide ? "wide" : ""}`}>
-      <div className="frame">
-        <div className="titlebar">
-          <i />
-          <i />
-          <i />
-          <span>{title}</span>
-        </div>
-        <div className="body">{children}</div>
-      </div>
-      <figcaption>{file}</figcaption>
-    </figure>
-  );
-}
-
 function Picture({ src, emoji, count = 1 }: { src: string; emoji: string; count?: number }) {
   const [missing, setMissing] = useState(false);
   useEffect(() => setMissing(false), [src]);
@@ -452,34 +435,6 @@ function Thing({ item, order, src, booked }: { item: Item; order: OrderItem; src
         <i />
         {booked ? "booked" : item.dept.toLowerCase()}
       </p>
-    </Win>
-  );
-}
-
-function Nearby({ kind, places }: { kind: string; places: Place[] | null }) {
-  const p = PLACES[kind];
-  return (
-    <Win wide title={p.name.toLowerCase()} file={places === null ? "searching.exa" : "nearby.exa"}>
-      <ul className="places">
-        {places === null && [0, 1, 2].map((i) => <li key={i} className="skeleton" />)}
-        {places?.length === 0 && <li>No matching places found.</li>}
-        {places?.map((pl) => (
-          <li key={pl.url}>
-            <a href={pl.url} target="_blank" rel="noreferrer">
-              {pl.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={pl.image} alt="" onError={(e) => (e.currentTarget.style.visibility = "hidden")} />
-              ) : (
-                <span className="thumb">{p.emoji}</span>
-              )}
-              <div>
-                <strong>{pl.title.toLowerCase()}</strong>
-                <span>{pl.blurb.toLowerCase()}</span>
-              </div>
-            </a>
-          </li>
-        ))}
-      </ul>
     </Win>
   );
 }
